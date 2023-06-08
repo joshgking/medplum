@@ -1,6 +1,6 @@
-import express from 'express';
-import { main } from '.';
+import http from 'http';
 import { shutdownApp } from './app';
+import { main } from './index';
 
 jest.mock('ioredis');
 
@@ -28,7 +28,7 @@ jest.mock('pg', () => {
       if (sql === 'SELECT "version" FROM "DatabaseMigration"') {
         return { rows: [{ version: 1000000 }] };
       }
-      if (sql === 'SELECT "User"."id", "User"."content" FROM "User" WHERE "deleted"=$1 LIMIT 1') {
+      if (sql === 'SELECT "User"."id", "User"."content" FROM "User" WHERE "User"."deleted"=$1 LIMIT 2') {
         return { rows: [{ id: '1', content: '{}' }] };
       }
       return { rows: [] };
@@ -65,8 +65,9 @@ jest.mock('pg', () => {
 
 describe('Server', () => {
   test('Main', async () => {
+    const createServerSpy = jest.spyOn(http, 'createServer');
     await main('file:medplum.config.json');
-    expect((express as any).listen).toHaveBeenCalledWith(8103);
+    expect(createServerSpy).toHaveBeenCalled();
     await shutdownApp();
   });
 });
